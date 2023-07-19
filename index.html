@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet</title>
+    <!-- installing leaflet.css in our DOM-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map{
+            width: 100%;
+            height: 100vh;
+        }
+        .coordinate{
+            position: absolute;
+            bottom: 10px;
+            right: 50%;
+        }
+        /* leaflet-popup-customization*/
+        .leaflet-popup-content-wrapper{ 
+            background: black;
+            color: #ffffff;
+            border: 2px solid white;
+            border-radius: 0px;
+        }
+    </style>
+</head>
+<body>
+    <!-- div -->
+    <div id="map"></div>
+    <div class="leaflet-control coordinate"></div>
+</body>
+</html>
+
+<!-- installing leaflet.js in our DOM-->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+<!-- Javascript file -->
+<script src="./point.js"></script>
+<script src="./line.js"></script>
+<script src="./polygon.js"></script>
+
+<script>
+    // Map Initialization
+    const map = L.map('map').setView([23.8417, 73.7147], 15); // coordinates & zoom level
+
+    // ---------------------------------------------TILE LAYERS & WMS-----------------------------------
+    //OSM Layer
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
+osm.addTo(map);
+
+// Watercolor - tileLayer
+var Watercolor = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+	maxZoom: 20,
+	attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+});
+// Watercolor.addTo(map)
+
+//darkmap
+var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+	subdomains: 'abcd',
+	maxZoom: 20
+});
+
+// dark.addTo(map)
+
+//google streets 
+googleStreets = L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+});
+googleStreets.addTo(map)
+
+//googleHybrid
+googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+});
+// googleHybrid.addTo(map)
+
+//googlesatellite
+googleSat = L.tileLayer('http://{s}.google.com/vt?lyrs=s&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+});
+// googleSat.addTo(map)
+
+//Terrain
+googleTerrain = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+});
+// googleTerrain.addTo(map)
+
+
+//WMS - Used to display WMS services as tile layers on the map. 
+var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
+    layers: 'nexrad-n0r-900913',
+    format: 'image/png',
+    transparent: true,
+    attribution: "Weather data © 2023 IEM Nexrad"
+});
+nexrad.addTo(map)
+
+//marker
+var myIcon = L.icon({
+    iconUrl: 'map.png',
+    iconSize: [40, 40],
+});
+var marker = L.marker([23.8417, 73.7147], {icon: myIcon,draggable: false});
+var marker2 = L.marker([26.9124, 75.7873], {icon: myIcon,draggable: true});
+var popup = marker.bindPopup('This is the Dungarpur, '+ marker.getLatLng()).openPopup();
+popup.addTo(map)
+console.log(marker.toGeoJSON()) //open the conole to see objects
+
+//GEOJSON
+var linedata = L.geoJSON(linejson).addTo(map)
+var pointdata =L.geoJSON(pointjson).addTo(map)
+var polygondata = L.geoJSON(polygonjson,{
+    onEachFeature: function(feature,layer){
+        layer.bindPopup('<b>Name: </b>'+feature.properties.name)
+    },
+    style:{
+        fillColor:'yellow',
+        fillOpacity: 1,
+        color: '#3388fd'
+    }
+}).addTo(map)
+
+//LAYER CONTROL
+var baseMaps = {
+    "OSM": osm,
+    "Water color": Watercolor,
+    "Dark":dark,
+    "Google Streets": googleStreets,
+    "Google Satellite": googleSat,
+    "Terrain" : googleTerrain,
+};
+
+var overlayMaps = {
+    "Marker 1": marker,
+    "Marker 2": marker2,
+    'Point Data': pointdata,
+    'Line Data': pointdata,
+    'Polygon Data': polygondata,
+    'nexrad': nexrad
+}; 
+
+// control layer
+L.control.layers(baseMaps, overlayMaps,{collapsed: true}).addTo(map);
+
+//leaflet events
+map.on('mouseover',function(){
+    console.log('your mouse is over the map')
+})
+
+map.on('mouseover',function(e){
+    document.getElementsByClassName('coordinate')[0].innerHTML = 'lat: ' + e.latlng.lat + ', lng: ' + e.latlng.lng;    
+    console.log('lat: ' + e.latlng.lat + 'lng: ' + e.latlng.lng);
+})
+
+
+// Real time location finder
+// if(!navigator.geolocation.getCurrentPosition){
+//     console.log("Browser not support geolocation feature")
+// } else {
+//     setInterval(()=>{
+//     navigator.geolocation.getCurrentPosition(getPosition)
+
+//     },5000)
+// }
+
+var marker, circle;
+
+function getPosition(position){
+    console.log(position)
+    var lat = position.coords.latitude
+    var long = position.coords.longitude
+    var accuracy = position.coords.accuracy
+    if(marker){
+        map.removeLayer(marker)
+    }
+
+    if(circle){
+        map.removeLayer(circle)
+    }
+
+
+    marker = L.marker([lat,long])
+    circle = L.circle([lat,long],{radius: accuracy}).addTo(map)
+    var featureGroup = L.featureGroup([marker, circle]).addTo(map)
+    map.fitBounds(featureGroup.getBounds())
+
+    console.log("your coordinates is: lat "+lat+" long: "+long+" accuracy: "+accuracy)
+
+
+}
+
+
+
+</script>
